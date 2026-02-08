@@ -64,6 +64,14 @@ class AnalysisResultDto {
   @ValidateNested()
   @Type(() => StructureDto)
   structure: StructureDto;
+
+  @IsString()
+  @IsOptional()
+  version?: string | null;
+
+  @IsString()
+  @IsOptional()
+  license?: string | null;
 }
 
 class RepoInfoDto {

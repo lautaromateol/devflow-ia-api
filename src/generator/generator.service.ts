@@ -22,12 +22,34 @@ interface AnalysisResult {
     directories: string[];
     keyFiles: string[];
   };
+  version?: string | null;
+  license?: string | null;
 }
 
 export interface GenerateReadmeInput {
   repoInfo: RepoInfo;
   analysisResult: AnalysisResult;
 }
+
+const LANGUAGE_BADGES: Record<string, { color: string; logo: string; logoColor?: string }> = {
+  TypeScript:  { color: '3178C6', logo: 'typescript', logoColor: 'white' },
+  JavaScript:  { color: 'F7DF1E', logo: 'javascript', logoColor: 'black' },
+  Python:      { color: '3776AB', logo: 'python', logoColor: 'white' },
+  Java:        { color: 'ED8B00', logo: 'openjdk', logoColor: 'white' },
+  Go:          { color: '00ADD8', logo: 'go', logoColor: 'white' },
+  Ruby:        { color: 'CC342D', logo: 'ruby', logoColor: 'white' },
+  PHP:         { color: '777BB4', logo: 'php', logoColor: 'white' },
+  Rust:        { color: '000000', logo: 'rust', logoColor: 'white' },
+  'C#':        { color: '239120', logo: 'csharp', logoColor: 'white' },
+  'C++':       { color: '00599C', logo: 'cplusplus', logoColor: 'white' },
+  C:           { color: 'A8B9CC', logo: 'c', logoColor: 'black' },
+  Swift:       { color: 'F05138', logo: 'swift', logoColor: 'white' },
+  Kotlin:      { color: '7F52FF', logo: 'kotlin', logoColor: 'white' },
+  Scala:       { color: 'DC322F', logo: 'scala', logoColor: 'white' },
+  Dart:        { color: '0175C2', logo: 'dart', logoColor: 'white' },
+  Vue:         { color: '4FC08D', logo: 'vuedotjs', logoColor: 'white' },
+  Svelte:      { color: 'FF3E00', logo: 'svelte', logoColor: 'white' },
+};
 
 const INSTALL_COMMANDS: Record<string, { install: string; dev: string }> = {
   npm: { install: 'npm install', dev: 'npm run dev' },
@@ -54,6 +76,7 @@ export class GeneratorService {
 
     const sections = [
       this.buildTitle(repoInfo),
+      this.buildBadges(analysisResult),
       this.buildDescription(repoInfo),
       this.buildTableOfContents(),
       this.buildPrerequisites(analysisResult),
@@ -69,6 +92,35 @@ export class GeneratorService {
 
   private buildTitle(repoInfo: RepoInfo): string {
     return `# ${repoInfo.name}`;
+  }
+
+  private buildBadges(analysis: AnalysisResult): string {
+    const badges: string[] = [];
+
+    // Language badge
+    const langBadge = LANGUAGE_BADGES[analysis.language];
+    if (langBadge) {
+      const logoColor = langBadge.logoColor ?? 'white';
+      badges.push(
+        `![${analysis.language}](https://img.shields.io/badge/${encodeURIComponent(analysis.language)}-${langBadge.color}?logo=${langBadge.logo}&logoColor=${logoColor})`,
+      );
+    }
+
+    // License badge
+    if (analysis.license) {
+      badges.push(
+        `![License](https://img.shields.io/badge/license-${encodeURIComponent(analysis.license)}-blue.svg)`,
+      );
+    }
+
+    // Version badge
+    if (analysis.version) {
+      badges.push(
+        `![Version](https://img.shields.io/badge/version-${encodeURIComponent(analysis.version)}-green.svg)`,
+      );
+    }
+
+    return badges.length > 0 ? badges.join(' ') : '';
   }
 
   private buildDescription(repoInfo: RepoInfo): string {
