@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { RepositoryModule } from './repository/repository.module';
 import { AnalyzerModule } from './analyzer/analyzer.module';
 import { GeneratorModule } from './generator/generator.module';
+import { ApiModule } from './api/api.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { GeneratorModule } from './generator/generator.module';
     RepositoryModule,
     AnalyzerModule,
     GeneratorModule,
+    ApiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
