@@ -4,7 +4,13 @@ export interface ExtractedDependency {
   type: 'production' | 'dev' | 'peer' | 'optional';
 }
 
+export interface ProjectMeta {
+  version: string | null;
+  license: string | null;
+}
+
 type DependencyExtractor = (content: string) => ExtractedDependency[];
+type MetaExtractor = (content: string) => ProjectMeta;
 
 // ─── package.json (npm / yarn / pnpm) ─────────────────────────────
 
@@ -466,4 +472,57 @@ export function extractDependenciesFromFile(
   const extractor = getExtractor(fileName);
   if (!extractor) return [];
   return extractor(content);
+}
+
+// ─── Project metadata extractors ──────────────────────────────────
+
+function extractMetaPackageJson(content: string): ProjectMeta {
+  const parsed = JSON.parse(content);
+  return {
+    version: typeof parsed.version === 'string' ? parsed.version : null,
+    license: typeof parsed.license === 'string' ? parsed.license : null,
+  };
+}
+
+function extractMetaCargoToml(content: string): ProjectMeta {
+  const version =
+    content.match(/^\[package\][\s\S]*?^version\s*=\s*"([^"]+)"/m)?.[1] ??
+    null;
+  const license =
+    content.match(/^\[package\][\s\S]*?^license\s*=\s*"([^"]+)"/m)?.[1] ??
+    null;
+  return { version, license };
+}
+
+function extractMetaPyprojectToml(content: string): ProjectMeta {
+  const version =
+    content.match(/^version\s*=\s*"([^"]+)"/m)?.[1] ?? null;
+  const license =
+    content.match(/^license\s*=\s*"([^"]+)"/m)?.[1] ?? null;
+  return { version, license };
+}
+
+function extractMetaPubspecYaml(content: string): ProjectMeta {
+  const version = content.match(/^version:\s*(.+)/m)?.[1]?.trim() ?? null;
+  return { version, license: null };
+}
+
+const META_EXTRACTOR_MAP: Record<string, MetaExtractor> = {
+  'package.json': extractMetaPackageJson,
+  'Cargo.toml': extractMetaCargoToml,
+  'pyproject.toml': extractMetaPyprojectToml,
+  'pubspec.yaml': extractMetaPubspecYaml,
+};
+
+export function extractProjectMeta(
+  fileName: string,
+  content: string,
+): ProjectMeta | null {
+  const extractor = META_EXTRACTOR_MAP[fileName];
+  if (!extractor) return null;
+  try {
+    return extractor(content);
+  } catch {
+    return null;
+  }
 }

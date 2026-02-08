@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   ExtractedDependency,
   extractDependenciesFromFile,
+  extractProjectMeta,
 } from './dependency-extractors';
 
 interface RepoFile {
@@ -25,6 +26,8 @@ export interface AnalysisResult {
     directories: string[];
     keyFiles: string[];
   };
+  version: string | null;
+  license: string | null;
 }
 
 const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
@@ -118,8 +121,9 @@ export class AnalyzerService {
     const dependencies = this.detectDependencies(files);
     const packageManager = this.getPackageManager(dependencies);
     const structure = this.detectStructure(files);
+    const { version, license } = this.extractMeta(files);
 
-    return { language, packageManager, dependencies, structure };
+    return { language, packageManager, dependencies, structure, version, license };
   }
 
   private detectLanguage(files: RepoFile[]): string {
@@ -204,5 +208,19 @@ export class AnalyzerService {
     }
 
     return { directories, keyFiles };
+  }
+
+  private extractMeta(files: RepoFile[]): {
+    version: string | null;
+    license: string | null;
+  } {
+    for (const file of files) {
+      if (file.type !== 'file' || !file.content) continue;
+      const meta = extractProjectMeta(file.name, file.content);
+      if (meta && (meta.version || meta.license)) {
+        return meta;
+      }
+    }
+    return { version: null, license: null };
   }
 }
